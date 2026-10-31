@@ -1,0 +1,53 @@
+# =============================================================================
+# Root .gitignore — ev-copilot-agentcore monorepo
+# =============================================================================
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+
+# ---- IDE / Editors ----
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# ---- Node.js ----
+node_modules/
+# (Next.js build output .next/ and next-env.d.ts are handled by ev-copilot-ui/.gitignore)
+
+# ---- AWS CDK ----
+cdk.out/
+.cdk.staging/
+
+# ---- TypeScript build output ----
+# (sub-project .gitignore handles *.js / *.d.ts selectively)
+
+# ---- Secrets & Environment ----
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# ---- Local docs (contains account-specific IDs) ----
+CONNECT.md
+
+# ---- Claude Code (local settings) ----
+.claude/settings.local.json

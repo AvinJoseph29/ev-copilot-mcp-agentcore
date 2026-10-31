@@ -1,0 +1,1393 @@
+[
+  {
+    "vehicle_id": "tata-nexon-ev-30",
+    "make": "Tata",
+    "model": "Nexon EV",
+    "variant": "30 kWh (Medium Range)",
+    "usable_battery_kwh": 29.0,
+    "efficiency_wh_per_km": 135,
+    "mass_kg": 1400,
+    "max_ac_charge_kw": 7.2,
+    "max_dc_charge_kw": 50,
+    "ac_connectors": [
+      "TYPE_2"
+    ],
+    "dc_connectors": [
+      "CCS2"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 42.5
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 50.0
+      },
+      {
+        "soc_percent": 40,
+        "power_kw": 50.0
+      },
+      {
+        "soc_percent": 60,
+        "power_kw": 45.0
+      },
+      {
+        "soc_percent": 75,
+        "power_kw": 35.0
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 25.0
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 12.5
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 4.0
+      }
+    ],
+    "est_range_km": 215,
+    "markets": [
+      "IN"
+    ]
+  },
+  {
+    "vehicle_id": "tata-nexon-ev-45",
+    "make": "Tata",
+    "model": "Nexon EV",
+    "variant": "45 kWh (Long Range)",
+    "usable_battery_kwh": 45.0,
+    "efficiency_wh_per_km": 140,
+    "mass_kg": 1440,
+    "max_ac_charge_kw": 7.2,
+    "max_dc_charge_kw": 60,
+    "ac_connectors": [
+      "TYPE_2"
+    ],
+    "dc_connectors": [
+      "CCS2"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 51.0
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 60.0
+      },
+      {
+        "soc_percent": 40,
+        "power_kw": 60.0
+      },
+      {
+        "soc_percent": 60,
+        "power_kw": 54.0
+      },
+      {
+        "soc_percent": 75,
+        "power_kw": 42.0
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 30.0
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 15.0
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 4.8
+      }
+    ],
+    "est_range_km": 321,
+    "markets": [
+      "IN"
+    ]
+  },
+  {
+    "vehicle_id": "tata-punch-ev-lr",
+    "make": "Tata",
+    "model": "Punch EV",
+    "variant": "35 kWh (Long Range)",
+    "usable_battery_kwh": 34.0,
+    "efficiency_wh_per_km": 125,
+    "mass_kg": 1360,
+    "max_ac_charge_kw": 7.2,
+    "max_dc_charge_kw": 50,
+    "ac_connectors": [
+      "TYPE_2"
+    ],
+    "dc_connectors": [
+      "CCS2"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 42.5
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 50.0
+      },
+      {
+        "soc_percent": 40,
+        "power_kw": 50.0
+      },
+      {
+        "soc_percent": 60,
+        "power_kw": 45.0
+      },
+      {
+        "soc_percent": 75,
+        "power_kw": 35.0
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 25.0
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 12.5
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 4.0
+      }
+    ],
+    "est_range_km": 272,
+    "markets": [
+      "IN"
+    ]
+  },
+  {
+    "vehicle_id": "tata-curvv-ev-55",
+    "make": "Tata",
+    "model": "Curvv EV",
+    "variant": "55 kWh",
+    "usable_battery_kwh": 53.0,
+    "efficiency_wh_per_km": 145,
+    "mass_kg": 1620,
+    "max_ac_charge_kw": 7.2,
+    "max_dc_charge_kw": 70,
+    "ac_connectors": [
+      "TYPE_2"
+    ],
+    "dc_connectors": [
+      "CCS2"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 59.5
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 70.0
+      },
+      {
+        "soc_percent": 40,
+        "power_kw": 70.0
+      },
+      {
+        "soc_percent": 60,
+        "power_kw": 63.0
+      },
+      {
+        "soc_percent": 75,
+        "power_kw": 49.0
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 35.0
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 17.5
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 5.6
+      }
+    ],
+    "est_range_km": 366,
+    "markets": [
+      "IN"
+    ]
+  },
+  {
+    "vehicle_id": "mahindra-be-6-79",
+    "make": "Mahindra",
+    "model": "BE 6",
+    "variant": "Pack Three 79 kWh",
+    "usable_battery_kwh": 76.0,
+    "efficiency_wh_per_km": 150,
+    "mass_kg": 2000,
+    "max_ac_charge_kw": 11.0,
+    "max_dc_charge_kw": 175,
+    "ac_connectors": [
+      "TYPE_2"
+    ],
+    "dc_connectors": [
+      "CCS2"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 140.0
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 166.2
+      },
+      {
+        "soc_percent": 20,
+        "power_kw": 175.0
+      },
+      {
+        "soc_percent": 40,
+        "power_kw": 157.5
+      },
+      {
+        "soc_percent": 60,
+        "power_kw": 122.5
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 78.8
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 38.5
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 10.5
+      }
+    ],
+    "est_range_km": 507,
+    "markets": [
+      "IN"
+    ]
+  },
+  {
+    "vehicle_id": "mahindra-xev-9e-79",
+    "make": "Mahindra",
+    "model": "XEV 9e",
+    "variant": "Pack Three 79 kWh",
+    "usable_battery_kwh": 76.0,
+    "efficiency_wh_per_km": 165,
+    "mass_kg": 2200,
+    "max_ac_charge_kw": 11.0,
+    "max_dc_charge_kw": 175,
+    "ac_connectors": [
+      "TYPE_2"
+    ],
+    "dc_connectors": [
+      "CCS2"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 140.0
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 166.2
+      },
+      {
+        "soc_percent": 20,
+        "power_kw": 175.0
+      },
+      {
+        "soc_percent": 40,
+        "power_kw": 157.5
+      },
+      {
+        "soc_percent": 60,
+        "power_kw": 122.5
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 78.8
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 38.5
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 10.5
+      }
+    ],
+    "est_range_km": 461,
+    "markets": [
+      "IN"
+    ]
+  },
+  {
+    "vehicle_id": "mahindra-xuv400-el-pro",
+    "make": "Mahindra",
+    "model": "XUV400",
+    "variant": "EL Pro 39.4 kWh",
+    "usable_battery_kwh": 37.5,
+    "efficiency_wh_per_km": 150,
+    "mass_kg": 1580,
+    "max_ac_charge_kw": 7.2,
+    "max_dc_charge_kw": 50,
+    "ac_connectors": [
+      "TYPE_2"
+    ],
+    "dc_connectors": [
+      "CCS2"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 42.5
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 50.0
+      },
+      {
+        "soc_percent": 40,
+        "power_kw": 50.0
+      },
+      {
+        "soc_percent": 60,
+        "power_kw": 45.0
+      },
+      {
+        "soc_percent": 75,
+        "power_kw": 35.0
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 25.0
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 12.5
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 4.0
+      }
+    ],
+    "est_range_km": 250,
+    "markets": [
+      "IN"
+    ]
+  },
+  {
+    "vehicle_id": "mg-zs-ev-50",
+    "make": "MG",
+    "model": "ZS EV",
+    "variant": "50.3 kWh",
+    "usable_battery_kwh": 48.0,
+    "efficiency_wh_per_km": 150,
+    "mass_kg": 1620,
+    "max_ac_charge_kw": 7.4,
+    "max_dc_charge_kw": 76,
+    "ac_connectors": [
+      "TYPE_2"
+    ],
+    "dc_connectors": [
+      "CCS2"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 60.8
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 72.2
+      },
+      {
+        "soc_percent": 20,
+        "power_kw": 76.0
+      },
+      {
+        "soc_percent": 40,
+        "power_kw": 68.4
+      },
+      {
+        "soc_percent": 60,
+        "power_kw": 53.2
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 34.2
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 16.7
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 4.6
+      }
+    ],
+    "est_range_km": 320,
+    "markets": [
+      "IN"
+    ]
+  },
+  {
+    "vehicle_id": "mg-windsor-ev-38",
+    "make": "MG",
+    "model": "Windsor EV",
+    "variant": "38 kWh",
+    "usable_battery_kwh": 36.5,
+    "efficiency_wh_per_km": 135,
+    "mass_kg": 1560,
+    "max_ac_charge_kw": 7.4,
+    "max_dc_charge_kw": 45,
+    "ac_connectors": [
+      "TYPE_2"
+    ],
+    "dc_connectors": [
+      "CCS2"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 38.2
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 45.0
+      },
+      {
+        "soc_percent": 40,
+        "power_kw": 45.0
+      },
+      {
+        "soc_percent": 60,
+        "power_kw": 40.5
+      },
+      {
+        "soc_percent": 75,
+        "power_kw": 31.5
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 22.5
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 11.2
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 3.6
+      }
+    ],
+    "est_range_km": 270,
+    "markets": [
+      "IN"
+    ]
+  },
+  {
+    "vehicle_id": "hyundai-creta-electric-51",
+    "make": "Hyundai",
+    "model": "Creta Electric",
+    "variant": "51.4 kWh (Long Range)",
+    "usable_battery_kwh": 49.5,
+    "efficiency_wh_per_km": 140,
+    "mass_kg": 1650,
+    "max_ac_charge_kw": 11.0,
+    "max_dc_charge_kw": 75,
+    "ac_connectors": [
+      "TYPE_2"
+    ],
+    "dc_connectors": [
+      "CCS2"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 60.0
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 71.2
+      },
+      {
+        "soc_percent": 20,
+        "power_kw": 75.0
+      },
+      {
+        "soc_percent": 40,
+        "power_kw": 67.5
+      },
+      {
+        "soc_percent": 60,
+        "power_kw": 52.5
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 33.8
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 16.5
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 4.5
+      }
+    ],
+    "est_range_km": 354,
+    "markets": [
+      "IN"
+    ]
+  },
+  {
+    "vehicle_id": "hyundai-ioniq-5-72",
+    "make": "Hyundai",
+    "model": "Ioniq 5",
+    "variant": "72.6 kWh RWD",
+    "usable_battery_kwh": 70.0,
+    "efficiency_wh_per_km": 165,
+    "mass_kg": 1830,
+    "max_ac_charge_kw": 11.0,
+    "max_dc_charge_kw": 220,
+    "ac_connectors": [
+      "TYPE_2"
+    ],
+    "dc_connectors": [
+      "CCS2"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 165.0
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 209.0
+      },
+      {
+        "soc_percent": 30,
+        "power_kw": 220.0
+      },
+      {
+        "soc_percent": 50,
+        "power_kw": 209.0
+      },
+      {
+        "soc_percent": 70,
+        "power_kw": 187.0
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 121.0
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 55.0
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 11.0
+      }
+    ],
+    "est_range_km": 424,
+    "markets": [
+      "IN"
+    ]
+  },
+  {
+    "vehicle_id": "kia-ev6-77",
+    "make": "Kia",
+    "model": "EV6",
+    "variant": "GT-Line AWD 77.4 kWh",
+    "usable_battery_kwh": 74.0,
+    "efficiency_wh_per_km": 170,
+    "mass_kg": 2100,
+    "max_ac_charge_kw": 11.0,
+    "max_dc_charge_kw": 235,
+    "ac_connectors": [
+      "TYPE_2"
+    ],
+    "dc_connectors": [
+      "CCS2"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 176.2
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 223.2
+      },
+      {
+        "soc_percent": 30,
+        "power_kw": 235.0
+      },
+      {
+        "soc_percent": 50,
+        "power_kw": 223.2
+      },
+      {
+        "soc_percent": 70,
+        "power_kw": 199.8
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 129.2
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 58.8
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 11.8
+      }
+    ],
+    "est_range_km": 435,
+    "markets": [
+      "IN"
+    ]
+  },
+  {
+    "vehicle_id": "byd-atto-3-60",
+    "make": "BYD",
+    "model": "Atto 3",
+    "variant": "Extended Range 60.48 kWh",
+    "usable_battery_kwh": 58.5,
+    "efficiency_wh_per_km": 155,
+    "mass_kg": 1750,
+    "max_ac_charge_kw": 7.0,
+    "max_dc_charge_kw": 80,
+    "ac_connectors": [
+      "TYPE_2"
+    ],
+    "dc_connectors": [
+      "CCS2"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 64.0
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 76.0
+      },
+      {
+        "soc_percent": 20,
+        "power_kw": 80.0
+      },
+      {
+        "soc_percent": 40,
+        "power_kw": 72.0
+      },
+      {
+        "soc_percent": 60,
+        "power_kw": 56.0
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 36.0
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 17.6
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 4.8
+      }
+    ],
+    "est_range_km": 377,
+    "markets": [
+      "IN"
+    ]
+  },
+  {
+    "vehicle_id": "byd-seal-82",
+    "make": "BYD",
+    "model": "Seal",
+    "variant": "Premium RWD 82.56 kWh",
+    "usable_battery_kwh": 80.0,
+    "efficiency_wh_per_km": 155,
+    "mass_kg": 2055,
+    "max_ac_charge_kw": 7.0,
+    "max_dc_charge_kw": 150,
+    "ac_connectors": [
+      "TYPE_2"
+    ],
+    "dc_connectors": [
+      "CCS2"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 120.0
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 142.5
+      },
+      {
+        "soc_percent": 20,
+        "power_kw": 150.0
+      },
+      {
+        "soc_percent": 40,
+        "power_kw": 135.0
+      },
+      {
+        "soc_percent": 60,
+        "power_kw": 105.0
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 67.5
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 33.0
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 9.0
+      }
+    ],
+    "est_range_km": 516,
+    "markets": [
+      "IN"
+    ]
+  },
+  {
+    "vehicle_id": "tesla-model-3-lr",
+    "make": "Tesla",
+    "model": "Model 3",
+    "variant": "Long Range AWD",
+    "usable_battery_kwh": 75.0,
+    "efficiency_wh_per_km": 140,
+    "mass_kg": 1830,
+    "max_ac_charge_kw": 11.5,
+    "max_dc_charge_kw": 250,
+    "ac_connectors": [
+      "NACS"
+    ],
+    "dc_connectors": [
+      "NACS",
+      "TESLA"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 225.0
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 250.0
+      },
+      {
+        "soc_percent": 20,
+        "power_kw": 237.5
+      },
+      {
+        "soc_percent": 30,
+        "power_kw": 200.0
+      },
+      {
+        "soc_percent": 50,
+        "power_kw": 137.5
+      },
+      {
+        "soc_percent": 70,
+        "power_kw": 95.0
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 70.0
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 37.5
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 12.5
+      }
+    ],
+    "est_range_km": 536,
+    "markets": [
+      "US",
+      "CA"
+    ]
+  },
+  {
+    "vehicle_id": "tesla-model-y-lr",
+    "make": "Tesla",
+    "model": "Model Y",
+    "variant": "Long Range AWD",
+    "usable_battery_kwh": 75.0,
+    "efficiency_wh_per_km": 155,
+    "mass_kg": 1980,
+    "max_ac_charge_kw": 11.5,
+    "max_dc_charge_kw": 250,
+    "ac_connectors": [
+      "NACS"
+    ],
+    "dc_connectors": [
+      "NACS",
+      "TESLA"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 225.0
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 250.0
+      },
+      {
+        "soc_percent": 20,
+        "power_kw": 237.5
+      },
+      {
+        "soc_percent": 30,
+        "power_kw": 200.0
+      },
+      {
+        "soc_percent": 50,
+        "power_kw": 137.5
+      },
+      {
+        "soc_percent": 70,
+        "power_kw": 95.0
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 70.0
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 37.5
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 12.5
+      }
+    ],
+    "est_range_km": 484,
+    "markets": [
+      "US",
+      "CA"
+    ]
+  },
+  {
+    "vehicle_id": "chevrolet-bolt-euv",
+    "make": "Chevrolet",
+    "model": "Bolt EUV",
+    "variant": "65 kWh",
+    "usable_battery_kwh": 65.0,
+    "efficiency_wh_per_km": 160,
+    "mass_kg": 1670,
+    "max_ac_charge_kw": 11.5,
+    "max_dc_charge_kw": 55,
+    "ac_connectors": [
+      "J1772"
+    ],
+    "dc_connectors": [
+      "CCS1"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 46.8
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 55.0
+      },
+      {
+        "soc_percent": 40,
+        "power_kw": 55.0
+      },
+      {
+        "soc_percent": 60,
+        "power_kw": 49.5
+      },
+      {
+        "soc_percent": 75,
+        "power_kw": 38.5
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 27.5
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 13.8
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 4.4
+      }
+    ],
+    "est_range_km": 406,
+    "markets": [
+      "US"
+    ]
+  },
+  {
+    "vehicle_id": "ford-mustang-mach-e-er-rwd",
+    "make": "Ford",
+    "model": "Mustang Mach-E",
+    "variant": "Extended Range RWD",
+    "usable_battery_kwh": 91.0,
+    "efficiency_wh_per_km": 180,
+    "mass_kg": 2070,
+    "max_ac_charge_kw": 11.0,
+    "max_dc_charge_kw": 150,
+    "ac_connectors": [
+      "J1772"
+    ],
+    "dc_connectors": [
+      "CCS1"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 120.0
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 142.5
+      },
+      {
+        "soc_percent": 20,
+        "power_kw": 150.0
+      },
+      {
+        "soc_percent": 40,
+        "power_kw": 135.0
+      },
+      {
+        "soc_percent": 60,
+        "power_kw": 105.0
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 67.5
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 33.0
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 9.0
+      }
+    ],
+    "est_range_km": 506,
+    "markets": [
+      "US",
+      "CA"
+    ]
+  },
+  {
+    "vehicle_id": "volkswagen-id4-pro",
+    "make": "Volkswagen",
+    "model": "ID.4",
+    "variant": "Pro 77 kWh",
+    "usable_battery_kwh": 77.0,
+    "efficiency_wh_per_km": 175,
+    "mass_kg": 2125,
+    "max_ac_charge_kw": 11.0,
+    "max_dc_charge_kw": 175,
+    "ac_connectors": [
+      "TYPE_2"
+    ],
+    "dc_connectors": [
+      "CCS2"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 140.0
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 166.2
+      },
+      {
+        "soc_percent": 20,
+        "power_kw": 175.0
+      },
+      {
+        "soc_percent": 40,
+        "power_kw": 157.5
+      },
+      {
+        "soc_percent": 60,
+        "power_kw": 122.5
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 78.8
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 38.5
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 10.5
+      }
+    ],
+    "est_range_km": 440,
+    "markets": [
+      "EU",
+      "UK"
+    ]
+  },
+  {
+    "vehicle_id": "hyundai-kona-electric-65",
+    "make": "Hyundai",
+    "model": "Kona Electric",
+    "variant": "64.8 kWh",
+    "usable_battery_kwh": 64.8,
+    "efficiency_wh_per_km": 150,
+    "mass_kg": 1740,
+    "max_ac_charge_kw": 10.9,
+    "max_dc_charge_kw": 100,
+    "ac_connectors": [
+      "J1772"
+    ],
+    "dc_connectors": [
+      "CCS1"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 80.0
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 95.0
+      },
+      {
+        "soc_percent": 20,
+        "power_kw": 100.0
+      },
+      {
+        "soc_percent": 40,
+        "power_kw": 90.0
+      },
+      {
+        "soc_percent": 60,
+        "power_kw": 70.0
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 45.0
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 22.0
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 6.0
+      }
+    ],
+    "est_range_km": 432,
+    "markets": [
+      "US"
+    ]
+  },
+  {
+    "vehicle_id": "kia-ev9-lr-rwd",
+    "make": "Kia",
+    "model": "EV9",
+    "variant": "Long Range RWD 99.8 kWh",
+    "usable_battery_kwh": 96.0,
+    "efficiency_wh_per_km": 210,
+    "mass_kg": 2400,
+    "max_ac_charge_kw": 11.0,
+    "max_dc_charge_kw": 210,
+    "ac_connectors": [
+      "J1772"
+    ],
+    "dc_connectors": [
+      "CCS1"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 157.5
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 199.5
+      },
+      {
+        "soc_percent": 30,
+        "power_kw": 210.0
+      },
+      {
+        "soc_percent": 50,
+        "power_kw": 199.5
+      },
+      {
+        "soc_percent": 70,
+        "power_kw": 178.5
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 115.5
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 52.5
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 10.5
+      }
+    ],
+    "est_range_km": 457,
+    "markets": [
+      "US"
+    ]
+  },
+  {
+    "vehicle_id": "polestar-2-lr-single",
+    "make": "Polestar",
+    "model": "Polestar 2",
+    "variant": "Long Range Single Motor 82 kWh",
+    "usable_battery_kwh": 79.0,
+    "efficiency_wh_per_km": 165,
+    "mass_kg": 2000,
+    "max_ac_charge_kw": 11.0,
+    "max_dc_charge_kw": 205,
+    "ac_connectors": [
+      "TYPE_2"
+    ],
+    "dc_connectors": [
+      "CCS2"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 164.0
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 194.8
+      },
+      {
+        "soc_percent": 20,
+        "power_kw": 205.0
+      },
+      {
+        "soc_percent": 40,
+        "power_kw": 184.5
+      },
+      {
+        "soc_percent": 60,
+        "power_kw": 143.5
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 92.2
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 45.1
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 12.3
+      }
+    ],
+    "est_range_km": 479,
+    "markets": [
+      "EU",
+      "UK"
+    ]
+  },
+  {
+    "vehicle_id": "bmw-i4-edrive40",
+    "make": "BMW",
+    "model": "i4",
+    "variant": "eDrive40",
+    "usable_battery_kwh": 80.7,
+    "efficiency_wh_per_km": 165,
+    "mass_kg": 2125,
+    "max_ac_charge_kw": 11.0,
+    "max_dc_charge_kw": 205,
+    "ac_connectors": [
+      "TYPE_2"
+    ],
+    "dc_connectors": [
+      "CCS2"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 164.0
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 194.8
+      },
+      {
+        "soc_percent": 20,
+        "power_kw": 205.0
+      },
+      {
+        "soc_percent": 40,
+        "power_kw": 184.5
+      },
+      {
+        "soc_percent": 60,
+        "power_kw": 143.5
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 92.2
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 45.1
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 12.3
+      }
+    ],
+    "est_range_km": 489,
+    "markets": [
+      "EU",
+      "UK"
+    ]
+  },
+  {
+    "vehicle_id": "nissan-leaf-e-plus",
+    "make": "Nissan",
+    "model": "Leaf",
+    "variant": "e+ 62 kWh",
+    "usable_battery_kwh": 59.0,
+    "efficiency_wh_per_km": 165,
+    "mass_kg": 1750,
+    "max_ac_charge_kw": 6.6,
+    "max_dc_charge_kw": 100,
+    "ac_connectors": [
+      "J1772"
+    ],
+    "dc_connectors": [
+      "CHADEMO"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 85.0
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 100.0
+      },
+      {
+        "soc_percent": 40,
+        "power_kw": 100.0
+      },
+      {
+        "soc_percent": 60,
+        "power_kw": 90.0
+      },
+      {
+        "soc_percent": 75,
+        "power_kw": 70.0
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 50.0
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 25.0
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 8.0
+      }
+    ],
+    "est_range_km": 358,
+    "markets": [
+      "US"
+    ]
+  },
+  {
+    "vehicle_id": "rivian-r1s-large",
+    "make": "Rivian",
+    "model": "R1S",
+    "variant": "Dual Motor Large Pack",
+    "usable_battery_kwh": 128.0,
+    "efficiency_wh_per_km": 250,
+    "mass_kg": 3100,
+    "max_ac_charge_kw": 11.5,
+    "max_dc_charge_kw": 220,
+    "ac_connectors": [
+      "J1772"
+    ],
+    "dc_connectors": [
+      "CCS1"
+    ],
+    "charging_curve": [
+      {
+        "soc_percent": 0,
+        "power_kw": 176.0
+      },
+      {
+        "soc_percent": 10,
+        "power_kw": 209.0
+      },
+      {
+        "soc_percent": 20,
+        "power_kw": 220.0
+      },
+      {
+        "soc_percent": 40,
+        "power_kw": 198.0
+      },
+      {
+        "soc_percent": 60,
+        "power_kw": 154.0
+      },
+      {
+        "soc_percent": 80,
+        "power_kw": 99.0
+      },
+      {
+        "soc_percent": 90,
+        "power_kw": 48.4
+      },
+      {
+        "soc_percent": 100,
+        "power_kw": 13.2
+      }
+    ],
+    "est_range_km": 512,
+    "markets": [
+      "US"
+    ]
+  }
+]

@@ -1,0 +1,392 @@
+name: Destroy EV Copilot Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      destroy_scope:
+        description: "What to destroy"
+        type: choice
+        options:
+          - all
+          - ui-only
+          - agent-only
+          - gateway-only
+          - agentcore-only
+          - ecr-only
+        default: all
+      confirm_destroy:
+        description: "Type 'destroy' to confirm (required)"
+        required: true
+        type: string
+      delete_ecr_images:
+        description: "Also delete all ECR images before removing repos"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: destroy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-2
+  APP_NAME: evCopilot
+
+jobs:
+  # =============================================================================
+  # Job 1: Validate confirmation
+  # =============================================================================
+  validate:
+    name: Validate Confirmation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check confirmation input
+        # Inputs are passed via env (never interpolated into the script)
+        env:
+          CONFIRM_DESTROY: ${{ inputs.confirm_destroy }}
+          DESTROY_SCOPE: ${{ inputs.destroy_scope }}
+        run: |
+          if [ "$CONFIRM_DESTROY" != "destroy" ]; then
+            echo "::error::Confirmation failed. You must type 'destroy' to proceed."
+            echo "You entered: '${CONFIRM_DESTROY}'"
+            exit 1
+          fi
+          echo "Confirmation accepted. Proceeding with destruction of: ${DESTROY_SCOPE}"
+
+      - name: Summary
+        env:
+          DESTROY_SCOPE: ${{ inputs.destroy_scope }}
+          DELETE_ECR_IMAGES: ${{ inputs.delete_ecr_images }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          echo "### Destroy Plan" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Setting | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Scope | \`${DESTROY_SCOPE}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Delete ECR images | \`${DELETE_ECR_IMAGES}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Triggered by | \`${ACTOR}\` |" >> "$GITHUB_STEP_SUMMARY"
+
+  # =============================================================================
+  # Job 2: Destroy UI Stack (App Runner + browser-key secret)
+  # =============================================================================
+  destroy-ui:
+    name: Destroy UI Stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: validate
+    if: inputs.destroy_scope == 'all' || inputs.destroy_scope == 'ui-only'
+    defaults:
+      run:
+        working-directory: ev-copilot-infra
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ev-copilot-infra/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Destroy UiStack
+        run: |
+          echo "Destroying ${APP_NAME}-UiStack..."
+          npx cdk destroy "${APP_NAME}-UiStack" --force || echo "Stack not found or already deleted"
+
+      - name: Force-delete Secrets Manager secret (skip recovery window)
+        run: |
+          # Same reason as the AgentCore secrets below: allow immediate
+          # re-creation of the browser-key secret on the next deploy.
+          SECRET="${APP_NAME}/google-maps-browser-key"
+          echo "Force-deleting secret: ${SECRET}..."
+          aws secretsmanager delete-secret \
+            --secret-id "$SECRET" \
+            --force-delete-without-recovery 2>/dev/null \
+            && echo "  Deleted ${SECRET}" \
+            || echo "  ${SECRET} not found or already deleted"
+
+  # =============================================================================
+  # Job 3: Destroy Agent Stack (Agent Runtime + Guardrails)
+  # =============================================================================
+  destroy-agent:
+    name: Destroy Agent Stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [validate, destroy-ui]
+    if: |
+      always() &&
+      needs.validate.result == 'success' &&
+      (needs.destroy-ui.result == 'success' || needs.destroy-ui.result == 'skipped') &&
+      (inputs.destroy_scope == 'all' || inputs.destroy_scope == 'agent-only')
+    defaults:
+      run:
+        working-directory: ev-copilot-infra
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ev-copilot-infra/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Destroy AgentStack
+        run: |
+          echo "Destroying ${APP_NAME}-AgentStack..."
+          npx cdk destroy "${APP_NAME}-AgentStack" --force || echo "Stack not found or already deleted"
+
+  # =============================================================================
+  # Job 4: Destroy Gateway Stack (MCP Gateway + OAuth2 Provider)
+  # =============================================================================
+  destroy-gateway:
+    name: Destroy Gateway Stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [validate, destroy-agent]
+    if: |
+      always() &&
+      needs.validate.result == 'success' &&
+      (needs.destroy-agent.result == 'success' || needs.destroy-agent.result == 'skipped') &&
+      (inputs.destroy_scope == 'all' || inputs.destroy_scope == 'gateway-only')
+    defaults:
+      run:
+        working-directory: ev-copilot-infra
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ev-copilot-infra/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Destroy GatewayStack
+        run: |
+          echo "Destroying ${APP_NAME}-GatewayStack..."
+          npx cdk destroy "${APP_NAME}-GatewayStack" --force || echo "Stack not found or already deleted"
+
+  # =============================================================================
+  # Job 5: Destroy AgentCore Stack (Runtime, Memory, Cognito, Prompts, Secrets)
+  # =============================================================================
+  destroy-agentcore:
+    name: Destroy AgentCore Stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [validate, destroy-gateway]
+    if: |
+      always() &&
+      needs.validate.result == 'success' &&
+      (needs.destroy-gateway.result == 'success' || needs.destroy-gateway.result == 'skipped') &&
+      (inputs.destroy_scope == 'all' || inputs.destroy_scope == 'agentcore-only')
+    defaults:
+      run:
+        working-directory: ev-copilot-infra
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ev-copilot-infra/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Destroy AgentCoreStack
+        run: |
+          echo "Destroying ${APP_NAME}-AgentCoreStack..."
+          npx cdk destroy "${APP_NAME}-AgentCoreStack" --force || echo "Stack not found or already deleted"
+
+      - name: Force-delete Secrets Manager secrets (skip recovery window)
+        run: |
+          # CDK sets removalPolicy=DESTROY which triggers a DeleteSecret call,
+          # but Secrets Manager schedules a 7-30 day recovery window by default.
+          # Force-delete to allow immediate re-creation on next deploy.
+          for SECRET in "${APP_NAME}/google-maps-api-key" "${APP_NAME}/openchargemap-api-key" "${APP_NAME}/cognito-client-secret"; do
+            echo "Force-deleting secret: ${SECRET}..."
+            aws secretsmanager delete-secret \
+              --secret-id "$SECRET" \
+              --force-delete-without-recovery 2>/dev/null \
+              && echo "  Deleted ${SECRET}" \
+              || echo "  ${SECRET} not found or already deleted"
+          done
+
+  # =============================================================================
+  # Job 6: Destroy ECR Stack (repositories)
+  # =============================================================================
+  destroy-ecr:
+    name: Destroy ECR Stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [validate, destroy-agentcore]
+    if: |
+      always() &&
+      needs.validate.result == 'success' &&
+      (needs.destroy-agentcore.result == 'success' || needs.destroy-agentcore.result == 'skipped') &&
+      (inputs.destroy_scope == 'all' || inputs.destroy_scope == 'ecr-only')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Delete ECR images (if requested)
+        if: inputs.delete_ecr_images == true
+        run: |
+          for REPO in evcopilot-mcp evcopilot-agent evcopilot-ui; do
+            echo "Deleting all images in ${REPO}..."
+            IMAGES=$(aws ecr list-images --repository-name "$REPO" --query 'imageIds[*]' --output json 2>/dev/null || echo "[]")
+            if [ "$IMAGES" != "[]" ] && [ -n "$IMAGES" ]; then
+              aws ecr batch-delete-image --repository-name "$REPO" --image-ids "$IMAGES" 2>/dev/null || true
+            fi
+            echo "Done with ${REPO}"
+          done
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ev-copilot-infra/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ev-copilot-infra
+        run: npm ci
+
+      - name: Destroy EcrStack
+        working-directory: ev-copilot-infra
+        run: |
+          echo "Destroying ${APP_NAME}-EcrStack..."
+          npx cdk destroy "${APP_NAME}-EcrStack" --force || echo "Stack not found or already deleted"
+
+      - name: Delete retained ECR repositories
+        run: |
+          # ECR repos use removalPolicy=RETAIN, so CDK only removes them from
+          # CloudFormation but leaves the actual repositories in AWS.
+          # Delete them here to allow a clean redeploy.
+          for REPO in evcopilot-mcp evcopilot-agent evcopilot-ui; do
+            echo "Deleting ECR repository: ${REPO}..."
+            aws ecr delete-repository --repository-name "$REPO" --force 2>/dev/null \
+              && echo "  Deleted ${REPO}" \
+              || echo "  ${REPO} not found or already deleted"
+          done
+
+  # =============================================================================
+  # Job 7: Final verification
+  # =============================================================================
+  verify:
+    name: Verify Destruction
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [validate, destroy-ui, destroy-agent, destroy-gateway, destroy-agentcore, destroy-ecr]
+    if: always() && needs.validate.result == 'success'
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Check remaining stacks
+        run: |
+          echo "### Remaining EV Copilot Stacks" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          FOUND=false
+          for STACK in EcrStack AgentCoreStack GatewayStack AgentStack UiStack; do
+            FULL_NAME="${APP_NAME}-${STACK}"
+            STATUS=$(aws cloudformation describe-stacks \
+              --stack-name "$FULL_NAME" \
+              --query "Stacks[0].StackStatus" \
+              --output text 2>/dev/null || echo "DELETED")
+
+            if [ "$STATUS" != "DELETED" ]; then
+              echo "- **${FULL_NAME}**: \`${STATUS}\`" >> "$GITHUB_STEP_SUMMARY"
+              FOUND=true
+            else
+              echo "- ~~${FULL_NAME}~~: deleted" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+
+          if [ "$FOUND" = "false" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "All EV Copilot stacks have been destroyed." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Summary of job results
+        if: always()
+        env:
+          DESTROY_UI: ${{ needs.destroy-ui.result }}
+          DESTROY_AGENT: ${{ needs.destroy-agent.result }}
+          DESTROY_GATEWAY: ${{ needs.destroy-gateway.result }}
+          DESTROY_AGENTCORE: ${{ needs.destroy-agentcore.result }}
+          DESTROY_ECR: ${{ needs.destroy-ecr.result }}
+        run: |
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Job Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Job | Result |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-----|--------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Destroy UI | \`${DESTROY_UI}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Destroy Agent | \`${DESTROY_AGENT}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Destroy Gateway | \`${DESTROY_GATEWAY}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Destroy AgentCore | \`${DESTROY_AGENTCORE}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Destroy ECR | \`${DESTROY_ECR}\` |" >> "$GITHUB_STEP_SUMMARY"

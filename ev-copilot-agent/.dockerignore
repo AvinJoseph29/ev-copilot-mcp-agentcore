@@ -1,0 +1,25 @@
+# Secrets — never bake local environment files into the image
+.env
+.env.*
+!.env.example
+
+# Local virtual environments and caches
+.venv/
+venv/
+ENV/
+.uv/
+__pycache__/
+*.py[cod]
+*$py.class
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# Build artifacts, VCS and OS files
+*.egg-info/
+dist/
+build/
+.git/
+.gitignore
+*.log
+.DS_Store

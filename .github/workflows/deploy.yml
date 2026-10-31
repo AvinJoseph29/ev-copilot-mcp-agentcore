@@ -1,0 +1,811 @@
+name: Deploy EV Copilot
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      deploy_components:
+        description: "Components to deploy"
+        type: choice
+        options:
+          - all
+          - infra-only
+          - mcp
+          - agent
+          - ui
+        default: all
+      image_tag:
+        description: "Docker image tag (defaults to short SHA)"
+        required: false
+        type: string
+      google_maps_api_key:
+        description: "Google Maps Platform server key — Places, Routes, Geocoding, Elevation, Weather (populates Secrets Manager)"
+        required: false
+        type: string
+      openchargemap_api_key:
+        description: "Open Charge Map API key (populates Secrets Manager)"
+        required: false
+        type: string
+      google_maps_browser_api_key:
+        description: "Google Maps JavaScript API browser key, HTTP-referrer restricted (populates Secrets Manager)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-2
+  APP_NAME: evCopilot
+
+# =============================================================================
+# Job 1: Detect which components changed
+# =============================================================================
+jobs:
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      deploy_mcp: ${{ steps.resolve.outputs.deploy_mcp }}
+      deploy_agent: ${{ steps.resolve.outputs.deploy_agent }}
+      deploy_ui: ${{ steps.resolve.outputs.deploy_ui }}
+      deploy_infra: ${{ steps.resolve.outputs.deploy_infra }}
+      any_deploy: ${{ steps.resolve.outputs.any_deploy }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect path changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            mcp:
+              - 'ev-copilot-mcp/**'
+            agent:
+              - 'ev-copilot-agent/**'
+            ui:
+              - 'ev-copilot-ui/**'
+            infra:
+              - 'ev-copilot-infra/**'
+
+      - name: Resolve deployment targets
+        id: resolve
+        # Inputs/outputs are passed via env (never interpolated into the script)
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT: ${{ inputs.deploy_components }}
+          MCP: ${{ steps.filter.outputs.mcp }}
+          AGENT: ${{ steps.filter.outputs.agent }}
+          UI: ${{ steps.filter.outputs.ui }}
+          INFRA: ${{ steps.filter.outputs.infra }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            case "$INPUT" in
+              all)
+                echo "deploy_mcp=true"   >> "$GITHUB_OUTPUT"
+                echo "deploy_agent=true"  >> "$GITHUB_OUTPUT"
+                echo "deploy_ui=true"     >> "$GITHUB_OUTPUT"
+                echo "deploy_infra=true"  >> "$GITHUB_OUTPUT"
+                echo "any_deploy=true"    >> "$GITHUB_OUTPUT"
+                ;;
+              infra-only)
+                echo "deploy_mcp=false"   >> "$GITHUB_OUTPUT"
+                echo "deploy_agent=false"  >> "$GITHUB_OUTPUT"
+                echo "deploy_ui=false"     >> "$GITHUB_OUTPUT"
+                echo "deploy_infra=true"   >> "$GITHUB_OUTPUT"
+                echo "any_deploy=true"     >> "$GITHUB_OUTPUT"
+                ;;
+              mcp)
+                echo "deploy_mcp=true"    >> "$GITHUB_OUTPUT"
+                echo "deploy_agent=false"  >> "$GITHUB_OUTPUT"
+                echo "deploy_ui=false"     >> "$GITHUB_OUTPUT"
+                echo "deploy_infra=false"  >> "$GITHUB_OUTPUT"
+                echo "any_deploy=true"     >> "$GITHUB_OUTPUT"
+                ;;
+              agent)
+                echo "deploy_mcp=false"   >> "$GITHUB_OUTPUT"
+                echo "deploy_agent=true"   >> "$GITHUB_OUTPUT"
+                echo "deploy_ui=false"     >> "$GITHUB_OUTPUT"
+                echo "deploy_infra=false"  >> "$GITHUB_OUTPUT"
+                echo "any_deploy=true"     >> "$GITHUB_OUTPUT"
+                ;;
+              ui)
+                echo "deploy_mcp=false"   >> "$GITHUB_OUTPUT"
+                echo "deploy_agent=false"  >> "$GITHUB_OUTPUT"
+                echo "deploy_ui=true"      >> "$GITHUB_OUTPUT"
+                echo "deploy_infra=false"  >> "$GITHUB_OUTPUT"
+                echo "any_deploy=true"     >> "$GITHUB_OUTPUT"
+                ;;
+            esac
+          else
+            # Push event: use path filter results
+            echo "deploy_mcp=${MCP}"       >> "$GITHUB_OUTPUT"
+            echo "deploy_agent=${AGENT}"   >> "$GITHUB_OUTPUT"
+            echo "deploy_ui=${UI}"         >> "$GITHUB_OUTPUT"
+            echo "deploy_infra=${INFRA}"   >> "$GITHUB_OUTPUT"
+
+            if [ "$MCP" = "true" ] || [ "$AGENT" = "true" ] || [ "$UI" = "true" ] || [ "$INFRA" = "true" ]; then
+              echo "any_deploy=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "any_deploy=false" >> "$GITHUB_OUTPUT"
+              echo "No deployment-relevant changes detected — skipping."
+            fi
+          fi
+
+      - name: Summary
+        env:
+          DEPLOY_MCP: ${{ steps.resolve.outputs.deploy_mcp }}
+          DEPLOY_AGENT: ${{ steps.resolve.outputs.deploy_agent }}
+          DEPLOY_UI: ${{ steps.resolve.outputs.deploy_ui }}
+          DEPLOY_INFRA: ${{ steps.resolve.outputs.deploy_infra }}
+        run: |
+          echo "### Deployment Targets" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Component | Deploy |"  >> "$GITHUB_STEP_SUMMARY"
+          echo "|-----------|--------|"  >> "$GITHUB_STEP_SUMMARY"
+          echo "| MCP       | \`${DEPLOY_MCP}\` |"   >> "$GITHUB_STEP_SUMMARY"
+          echo "| Agent     | \`${DEPLOY_AGENT}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| UI        | \`${DEPLOY_UI}\` |"    >> "$GITHUB_STEP_SUMMARY"
+          echo "| Infra     | \`${DEPLOY_INFRA}\` |" >> "$GITHUB_STEP_SUMMARY"
+
+  # =============================================================================
+  # Job 2: Ensure ECR repositories exist
+  # =============================================================================
+  deploy-ecr:
+    name: Ensure ECR Repositories
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: detect-changes
+    if: needs.detect-changes.outputs.any_deploy == 'true'
+    defaults:
+      run:
+        working-directory: ev-copilot-infra
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ev-copilot-infra/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Clean up orphaned ECR repos not tracked by CloudFormation
+        run: |
+          # ECR repos use removalPolicy=RETAIN. After a stack destroy, the
+          # repos survive in AWS but CloudFormation no longer knows about them.
+          # CDK deploy will fail trying to create repos that already exist.
+          #
+          # Check: does the EcrStack own these repos right now?
+          # If not (stack gone / failed create / never deployed), delete any
+          # orphaned repos so CDK can recreate them cleanly.
+
+          STACK_STATUS=$(aws cloudformation describe-stacks \
+            --stack-name "${APP_NAME}-EcrStack" \
+            --query "Stacks[0].StackStatus" \
+            --output text 2>/dev/null || echo "GONE")
+
+          echo "EcrStack status: ${STACK_STATUS}"
+
+          # Healthy = any *_COMPLETE state except ROLLBACK_COMPLETE (failed
+          # create) and DELETE_COMPLETE. UPDATE_ROLLBACK_COMPLETE is a normal,
+          # healthy state after a failed update — the stack still owns the repos.
+          # In-progress and other failed states (e.g. UPDATE_ROLLBACK_FAILED)
+          # are never touched — the stack may still own live repos.
+          case "$STACK_STATUS" in
+            GONE|ROLLBACK_COMPLETE|ROLLBACK_FAILED|DELETE_COMPLETE)
+              ;;
+            *_COMPLETE)
+              echo "EcrStack is healthy — repos are managed by CloudFormation, skipping cleanup."
+              exit 0
+              ;;
+            *)
+              echo "::error::EcrStack is ${STACK_STATUS} — refusing to touch its repos (operation running or stack needs manual recovery)."
+              exit 1
+              ;;
+          esac
+
+          # Stack gone or failed on create (GONE, ROLLBACK_COMPLETE,
+          # ROLLBACK_FAILED): check for orphaned repos and remove them.
+          echo "EcrStack does not own its repos (${STACK_STATUS}) — checking for orphaned ECR repos..."
+          for REPO in evcopilot-mcp evcopilot-agent evcopilot-ui; do
+            if aws ecr describe-repositories --repository-names "$REPO" > /dev/null 2>&1; then
+              echo "Found orphaned repo: ${REPO} — deleting so CDK can recreate it..."
+              aws ecr delete-repository --repository-name "$REPO" --force
+            else
+              echo "Repo ${REPO} does not exist — OK"
+            fi
+          done
+
+      - name: Deploy EcrStack
+        run: |
+          npx cdk deploy "${APP_NAME}-EcrStack" \
+            --exclusively \
+            --require-approval never
+
+  # =============================================================================
+  # Job 3a: Build MCP image
+  # =============================================================================
+  build-mcp:
+    name: Build MCP Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [detect-changes, deploy-ecr]
+    if: needs.detect-changes.outputs.deploy_mcp == 'true'
+    outputs:
+      image_uri: ${{ steps.build.outputs.image_uri }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up QEMU (for ARM64 cross-build)
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set image tag
+        id: tag
+        env:
+          INPUT_IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          if [ -n "$INPUT_IMAGE_TAG" ]; then
+            echo "tag=${INPUT_IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build, tag, and push
+        id: build
+        working-directory: ev-copilot-mcp
+        env:
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          IMAGE_URI="${REGISTRY}/evcopilot-mcp:${IMAGE_TAG}"
+          docker buildx build \
+            --platform linux/arm64 \
+            -t "${IMAGE_URI}" \
+            -t "${REGISTRY}/evcopilot-mcp:latest" \
+            --push \
+            .
+          echo "image_uri=${IMAGE_URI}" >> "$GITHUB_OUTPUT"
+          echo "Pushed: ${IMAGE_URI}"
+
+  # =============================================================================
+  # Job 3b: Build Agent image
+  # =============================================================================
+  build-agent:
+    name: Build Agent Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [detect-changes, deploy-ecr]
+    if: needs.detect-changes.outputs.deploy_agent == 'true'
+    outputs:
+      image_uri: ${{ steps.build.outputs.image_uri }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up QEMU (for ARM64 cross-build)
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set image tag
+        id: tag
+        env:
+          INPUT_IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          if [ -n "$INPUT_IMAGE_TAG" ]; then
+            echo "tag=${INPUT_IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build, tag, and push
+        id: build
+        working-directory: ev-copilot-agent
+        env:
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          IMAGE_URI="${REGISTRY}/evcopilot-agent:${IMAGE_TAG}"
+          docker buildx build \
+            --platform linux/arm64 \
+            -t "${IMAGE_URI}" \
+            -t "${REGISTRY}/evcopilot-agent:latest" \
+            --push \
+            .
+          echo "image_uri=${IMAGE_URI}" >> "$GITHUB_OUTPUT"
+          echo "Pushed: ${IMAGE_URI}"
+
+  # =============================================================================
+  # Job 3c: Build UI image (Next.js — App Runner requires linux/amd64)
+  # =============================================================================
+  build-ui:
+    name: Build UI Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [detect-changes, deploy-ecr]
+    if: needs.detect-changes.outputs.deploy_ui == 'true'
+    outputs:
+      image_uri: ${{ steps.build.outputs.image_uri }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set image tag
+        id: tag
+        env:
+          INPUT_IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          if [ -n "$INPUT_IMAGE_TAG" ]; then
+            echo "tag=${INPUT_IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build, tag, and push
+        id: build
+        working-directory: ev-copilot-ui
+        env:
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          IMAGE_URI="${REGISTRY}/evcopilot-ui:${IMAGE_TAG}"
+          docker buildx build \
+            --platform linux/amd64 \
+            -t "${IMAGE_URI}" \
+            -t "${REGISTRY}/evcopilot-ui:latest" \
+            --push \
+            .
+          echo "image_uri=${IMAGE_URI}" >> "$GITHUB_OUTPUT"
+          echo "Pushed: ${IMAGE_URI}"
+
+  # =============================================================================
+  # Job 4: Deploy CDK stacks in dependency order
+  # =============================================================================
+  deploy-stacks:
+    name: Deploy CDK Stacks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [detect-changes, deploy-ecr, build-mcp, build-agent, build-ui]
+    # Run even when build jobs were skipped (component not changed)
+    if: |
+      always() &&
+      needs.deploy-ecr.result != 'failure' &&
+      needs.build-mcp.result != 'failure' &&
+      needs.build-agent.result != 'failure' &&
+      needs.build-ui.result != 'failure' &&
+      needs.detect-changes.outputs.any_deploy == 'true'
+    defaults:
+      run:
+        working-directory: ev-copilot-infra
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ev-copilot-infra/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Resolve image URIs
+        id: images
+        env:
+          BUILT_MCP_URI: ${{ needs.build-mcp.outputs.image_uri }}
+          BUILT_AGENT_URI: ${{ needs.build-agent.outputs.image_uri }}
+          BUILT_UI_URI: ${{ needs.build-ui.outputs.image_uri }}
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          REGION="${AWS_REGION}"
+
+          # MCP — use build output or fall back to :latest
+          MCP_URI="${BUILT_MCP_URI}"
+          if [ -z "$MCP_URI" ]; then
+            MCP_URI="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/evcopilot-mcp:latest"
+          fi
+          echo "mcp_uri=${MCP_URI}" >> "$GITHUB_OUTPUT"
+
+          # Agent
+          AGENT_URI="${BUILT_AGENT_URI}"
+          if [ -z "$AGENT_URI" ]; then
+            AGENT_URI="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/evcopilot-agent:latest"
+          fi
+          echo "agent_uri=${AGENT_URI}" >> "$GITHUB_OUTPUT"
+
+          # UI
+          UI_URI="${BUILT_UI_URI}"
+          if [ -z "$UI_URI" ]; then
+            UI_URI="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/evcopilot-ui:latest"
+          fi
+          echo "ui_uri=${UI_URI}" >> "$GITHUB_OUTPUT"
+
+          echo "MCP image:   ${MCP_URI}"
+          echo "Agent image: ${AGENT_URI}"
+          echo "UI image:    ${UI_URI}"
+
+      # --- Clean up orphaned Secrets Manager secrets ---
+      # After a stack destroy, secrets enter a 7-30 day recovery window.
+      # CDK will fail to CREATE a new secret with the same name.
+      # Force-delete any orphaned secrets so CDK can recreate them cleanly.
+      - name: Clean up orphaned Secrets Manager secrets
+        if: needs.detect-changes.outputs.deploy_mcp == 'true' || needs.detect-changes.outputs.deploy_infra == 'true'
+        run: |
+          STACK_STATUS=$(aws cloudformation describe-stacks \
+            --stack-name "${APP_NAME}-AgentCoreStack" \
+            --query "Stacks[0].StackStatus" \
+            --output text 2>/dev/null || echo "GONE")
+
+          echo "AgentCoreStack status: ${STACK_STATUS}"
+
+          # Healthy = any *_COMPLETE state except ROLLBACK_COMPLETE (failed
+          # create) and DELETE_COMPLETE — the stack owns the secrets, nothing to
+          # do. UPDATE_ROLLBACK_COMPLETE is healthy (live secrets are kept).
+          # In-progress and other failed states (e.g. UPDATE_ROLLBACK_FAILED)
+          # are never touched — the stack may still own live secrets.
+          case "$STACK_STATUS" in
+            GONE|ROLLBACK_COMPLETE|ROLLBACK_FAILED|DELETE_COMPLETE)
+              ;;
+            *_COMPLETE)
+              echo "AgentCoreStack is healthy — secrets are managed by CloudFormation, skipping cleanup."
+              exit 0
+              ;;
+            *)
+              echo "::error::AgentCoreStack is ${STACK_STATUS} — refusing to touch its secrets (operation running or stack needs manual recovery)."
+              exit 1
+              ;;
+          esac
+
+          echo "AgentCoreStack is not healthy (${STACK_STATUS}) — checking for orphaned secrets..."
+
+          # Delete the rolled-back stack so CDK can create a fresh one
+          if [ "$STACK_STATUS" = "ROLLBACK_COMPLETE" ] || [ "$STACK_STATUS" = "ROLLBACK_FAILED" ]; then
+            echo "Deleting rolled-back stack..."
+            aws cloudformation delete-stack --stack-name "${APP_NAME}-AgentCoreStack"
+            aws cloudformation wait stack-delete-complete --stack-name "${APP_NAME}-AgentCoreStack" || true
+          fi
+
+          for SECRET in "${APP_NAME}/google-maps-api-key" "${APP_NAME}/openchargemap-api-key" "${APP_NAME}/cognito-client-secret"; do
+            if aws secretsmanager describe-secret --secret-id "$SECRET" > /dev/null 2>&1; then
+              echo "Found orphaned secret: ${SECRET} — force-deleting..."
+              aws secretsmanager delete-secret \
+                --secret-id "$SECRET" \
+                --force-delete-without-recovery || true
+            else
+              echo "Secret ${SECRET} does not exist — OK"
+            fi
+          done
+
+      # --- Deploy stacks in dependency order, each conditional ---
+
+      - name: Deploy AgentCoreStack
+        if: needs.detect-changes.outputs.deploy_mcp == 'true' || needs.detect-changes.outputs.deploy_infra == 'true'
+        env:
+          MCP_URI: ${{ steps.images.outputs.mcp_uri }}
+        run: |
+          echo "Deploying AgentCoreStack with MCP image: ${MCP_URI}"
+          npx cdk deploy "${APP_NAME}-AgentCoreStack" \
+            --exclusively \
+            --require-approval never \
+            -c "imageUri=${MCP_URI}"
+
+      - name: Deploy GatewayStack
+        if: needs.detect-changes.outputs.deploy_mcp == 'true' || needs.detect-changes.outputs.deploy_infra == 'true'
+        env:
+          MCP_URI: ${{ steps.images.outputs.mcp_uri }}
+        run: |
+          echo "Deploying GatewayStack..."
+          npx cdk deploy "${APP_NAME}-GatewayStack" \
+            --exclusively \
+            --require-approval never \
+            -c "imageUri=${MCP_URI}"
+
+      - name: Deploy AgentStack
+        if: needs.detect-changes.outputs.deploy_agent == 'true' || needs.detect-changes.outputs.deploy_infra == 'true'
+        env:
+          MCP_URI: ${{ steps.images.outputs.mcp_uri }}
+          AGENT_URI: ${{ steps.images.outputs.agent_uri }}
+        run: |
+          echo "Deploying AgentStack with image: ${AGENT_URI}"
+          npx cdk deploy "${APP_NAME}-AgentStack" \
+            --exclusively \
+            --require-approval never \
+            -c "imageUri=${MCP_URI}" \
+            -c "agentImageUri=${AGENT_URI}"
+
+      # The browser-key secret is owned by UiStack — same orphan handling as above.
+      - name: Clean up orphaned UI secret
+        if: needs.detect-changes.outputs.deploy_ui == 'true' || needs.detect-changes.outputs.deploy_infra == 'true'
+        run: |
+          STACK_STATUS=$(aws cloudformation describe-stacks \
+            --stack-name "${APP_NAME}-UiStack" \
+            --query "Stacks[0].StackStatus" \
+            --output text 2>/dev/null || echo "GONE")
+
+          echo "UiStack status: ${STACK_STATUS}"
+
+          case "$STACK_STATUS" in
+            GONE|ROLLBACK_COMPLETE|ROLLBACK_FAILED|DELETE_COMPLETE)
+              ;;
+            *_COMPLETE)
+              echo "UiStack is healthy — secret is managed by CloudFormation, skipping cleanup."
+              exit 0
+              ;;
+            *)
+              echo "::error::UiStack is ${STACK_STATUS} — refusing to touch its secret (operation running or stack needs manual recovery)."
+              exit 1
+              ;;
+          esac
+
+          echo "UiStack is not healthy (${STACK_STATUS}) — checking for orphaned secret..."
+
+          # Delete the rolled-back stack so CDK can create a fresh one
+          if [ "$STACK_STATUS" = "ROLLBACK_COMPLETE" ] || [ "$STACK_STATUS" = "ROLLBACK_FAILED" ]; then
+            echo "Deleting rolled-back stack..."
+            aws cloudformation delete-stack --stack-name "${APP_NAME}-UiStack"
+            aws cloudformation wait stack-delete-complete --stack-name "${APP_NAME}-UiStack" || true
+          fi
+
+          SECRET="${APP_NAME}/google-maps-browser-key"
+          if aws secretsmanager describe-secret --secret-id "$SECRET" > /dev/null 2>&1; then
+            echo "Found orphaned secret: ${SECRET} — force-deleting..."
+            aws secretsmanager delete-secret \
+              --secret-id "$SECRET" \
+              --force-delete-without-recovery || true
+          else
+            echo "Secret ${SECRET} does not exist — OK"
+          fi
+
+      - name: Deploy UiStack
+        if: needs.detect-changes.outputs.deploy_ui == 'true' || needs.detect-changes.outputs.deploy_infra == 'true'
+        env:
+          MCP_URI: ${{ steps.images.outputs.mcp_uri }}
+          AGENT_URI: ${{ steps.images.outputs.agent_uri }}
+          UI_URI: ${{ steps.images.outputs.ui_uri }}
+          # Optional repository variable — without it the Map ID falls back to DEMO_MAP_ID
+          MAPS_MAP_ID: ${{ vars.MAPS_MAP_ID }}
+        run: |
+          echo "Deploying UiStack with image: ${UI_URI}"
+          npx cdk deploy "${APP_NAME}-UiStack" \
+            --exclusively \
+            --require-approval never \
+            -c "imageUri=${MCP_URI}" \
+            -c "agentImageUri=${AGENT_URI}" \
+            -c "uiImageUri=${UI_URI}" \
+            -c "mapsMapId=${MAPS_MAP_ID:-DEMO_MAP_ID}"
+
+      - name: Print stack outputs
+        if: always()
+        run: |
+          for STACK in AgentCoreStack GatewayStack AgentStack UiStack; do
+            echo "--- ${APP_NAME}-${STACK} ---"
+            aws cloudformation describe-stacks \
+              --stack-name "${APP_NAME}-${STACK}" \
+              --query "Stacks[0].Outputs[*].[OutputKey,OutputValue]" \
+              --output table 2>/dev/null || echo "Stack not found or not deployed"
+            echo ""
+          done
+
+  # =============================================================================
+  # Job 5: Set API key secret values (after the stacks that own the secrets)
+  # =============================================================================
+  # Runs AFTER deploy-stacks so CDK has already created the secrets — this job
+  # only calls put-secret-value (never create-secret), so the keys cannot be
+  # lost to the orphaned-secret cleanup or a first-deploy race.
+  configure-secrets:
+    name: Configure API Key Secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [detect-changes, deploy-stacks]
+    if: |
+      always() &&
+      needs.deploy-stacks.result == 'success' &&
+      github.event_name == 'workflow_dispatch' &&
+      (inputs.google_maps_api_key != '' || inputs.openchargemap_api_key != '' || inputs.google_maps_browser_api_key != '')
+
+    steps:
+      # Mask the keys before any step receives them through env: — GitHub prints
+      # each step's env block in the log, and only already-masked values are redacted.
+      # Read from the event payload so the values never appear in this step's own log.
+      - name: Mask API key inputs
+        run: |
+          for KEY in google_maps_api_key openchargemap_api_key google_maps_browser_api_key; do
+            VALUE=$(jq -r --arg k "$KEY" '.inputs[$k] // empty' "$GITHUB_EVENT_PATH")
+            if [ -n "$VALUE" ]; then
+              echo "::add-mask::${VALUE}"
+            fi
+          done
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set Google Maps Platform API key
+        if: inputs.google_maps_api_key != ''
+        env:
+          API_KEY: ${{ inputs.google_maps_api_key }}
+        run: |
+          echo "::add-mask::${API_KEY}"
+          aws secretsmanager put-secret-value \
+            --secret-id "${APP_NAME}/google-maps-api-key" \
+            --secret-string "$(jq -cn --arg k "$API_KEY" '{api_key: $k}')" \
+            > /dev/null
+          echo "Google Maps Platform API key configured"
+
+      - name: Set Open Charge Map API key
+        if: inputs.openchargemap_api_key != ''
+        env:
+          API_KEY: ${{ inputs.openchargemap_api_key }}
+        run: |
+          echo "::add-mask::${API_KEY}"
+          aws secretsmanager put-secret-value \
+            --secret-id "${APP_NAME}/openchargemap-api-key" \
+            --secret-string "$(jq -cn --arg k "$API_KEY" '{api_key: $k}')" \
+            > /dev/null
+          echo "Open Charge Map API key configured"
+
+      - name: Set Google Maps browser key
+        if: inputs.google_maps_browser_api_key != ''
+        env:
+          API_KEY: ${{ inputs.google_maps_browser_api_key }}
+        run: |
+          echo "::add-mask::${API_KEY}"
+          # Plain string (NOT JSON) — injected into App Runner as GOOGLE_MAPS_BROWSER_API_KEY
+          aws secretsmanager put-secret-value \
+            --secret-id "${APP_NAME}/google-maps-browser-key" \
+            --secret-string "$API_KEY" \
+            > /dev/null
+          echo "Google Maps browser key configured"
+
+          # App Runner reads secrets when instances start — redeploy to pick it up
+          SERVICE_ARN=$(aws cloudformation describe-stacks \
+            --stack-name "${APP_NAME}-UiStack" \
+            --query "Stacks[0].Outputs[?OutputKey=='UiServiceArn'].OutputValue" \
+            --output text 2>/dev/null || echo "")
+          if [ -n "$SERVICE_ARN" ] && [ "$SERVICE_ARN" != "None" ]; then
+            aws apprunner start-deployment --service-arn "$SERVICE_ARN" --no-cli-pager > /dev/null \
+              && echo "Started App Runner deployment to load the new key" \
+              || echo "::warning::Could not start an App Runner deployment (another operation may be in progress). Redeploy the UI service to load the new key."
+          else
+            echo "::warning::${APP_NAME}-UiStack not found — the key will be used once the UI is deployed."
+          fi
+
+  # =============================================================================
+  # Job 6: Sync Gateway Target (after MCP or infra changes)
+  # =============================================================================
+  # Waits for configure-secrets (when it runs) so the tools/list call that the
+  # sync triggers does not start an MCP container before the API keys are set.
+  sync-gateway:
+    name: Sync Gateway Target
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [detect-changes, deploy-stacks, configure-secrets]
+    if: |
+      always() &&
+      needs.deploy-stacks.result == 'success' &&
+      needs.configure-secrets.result != 'failure' &&
+      (needs.detect-changes.outputs.deploy_mcp == 'true' || needs.detect-changes.outputs.deploy_infra == 'true')
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync gateway target to pick up new tools
+        run: |
+          # Fetch Gateway IDs from CloudFormation outputs (set by GatewayStack)
+          GATEWAY_ID=$(aws cloudformation describe-stacks \
+            --stack-name "${APP_NAME}-GatewayStack" \
+            --query "Stacks[0].Outputs[?OutputKey=='GatewayId'].OutputValue" \
+            --output text --region "$AWS_REGION")
+
+          GATEWAY_TARGET_ID=$(aws cloudformation describe-stacks \
+            --stack-name "${APP_NAME}-GatewayStack" \
+            --query "Stacks[0].Outputs[?OutputKey=='GatewayTargetId'].OutputValue" \
+            --output text --region "$AWS_REGION")
+
+          echo "Gateway ID: ${GATEWAY_ID}"
+          echo "Gateway Target ID: ${GATEWAY_TARGET_ID}"
+
+          if [ -z "$GATEWAY_ID" ] || [ -z "$GATEWAY_TARGET_ID" ]; then
+            echo "::error::Could not resolve Gateway IDs from ${APP_NAME}-GatewayStack outputs. Has the GatewayStack been deployed?"
+            exit 1
+          fi
+
+          TARGET=$(aws bedrock-agentcore-control get-gateway-target \
+            --gateway-identifier "$GATEWAY_ID" \
+            --target-id "$GATEWAY_TARGET_ID" \
+            --region "$AWS_REGION" --output json)
+
+          aws bedrock-agentcore-control update-gateway-target \
+            --gateway-identifier "$GATEWAY_ID" \
+            --target-id "$GATEWAY_TARGET_ID" \
+            --name "${APP_NAME}-McpTarget" \
+            --target-configuration "$(jq -c .targetConfiguration <<< "$TARGET")" \
+            --credential-provider-configurations "$(jq -c .credentialProviderConfigurations <<< "$TARGET")" \
+            --region "$AWS_REGION" --no-cli-pager
+
+          echo "Gateway target synced successfully"

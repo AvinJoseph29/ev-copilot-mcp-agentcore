@@ -1,0 +1,14 @@
+# TypeScript build output
+*.js
+!jest.config.js
+*.d.ts
+
+# CDK
+cdk.out/
+.cdk.staging/
+
+# Node
+node_modules/
+
+# Build
+dist/
