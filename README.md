@@ -18,7 +18,7 @@ This README is written as an article. The first part is a quick reference (what 
 components and project structure). The middle part walks through how and why the system is built the way it is,
 one diagram at a time. The last part covers setup, deployment and configuration.
 
-![EV Copilot architecture](docs/ev-copilot-architecture.png)
+<img width="2550" height="2340" alt="ev-copilot-architecture" src="https://github.com/user-attachments/assets/433dc86f-ba95-47e9-91bd-4db5f0f4d67b" />
 
 ---
 
@@ -104,7 +104,6 @@ The architecture diagram above reads from the bottom up:
 | **UI** | [`ev-copilot-ui/`](ev-copilot-ui) | Next.js chat with a Google Map, battery chart, trip summary and live tool progress |
 | **Infrastructure** | [`ev-copilot-infra/`](ev-copilot-infra) | AWS CDK (TypeScript): 5 stacks for the full deployment |
 | **CI/CD** | [`.github/workflows/`](.github/workflows) | GitHub Actions deploy (path-filtered, per component) and destroy workflows |
-| **Docs and figures** | [`docs/`](docs) | All diagrams in this README, plus the scripts that generate them |
 
 ### MCP tools
 
@@ -180,7 +179,6 @@ Through the Gateway, tool names carry the prefix `evCopilot-McpTarget___`, e.g.
 │   ├── lib/stacks/          # 5 CDK stacks
 │   ├── lib/lambda/          # OAuth2 credential-provider custom resource
 │   └── package.json
-├── docs/                    # Architecture figures (+ diagram-src/ to regenerate them)
 ├── ARCHITECTURE.md          # Detailed architecture and connection guide
 └── README.md                # This article
 ```
@@ -192,7 +190,7 @@ Through the Gateway, tool names carry the prefix `evCopilot-McpTarget___`, e.g.
 An agent is only as useful as the tools it can call. EV Copilot needs routing, chargers, weather, places, a
 vehicle catalog, memory and managed prompts, and it might use more than one model.
 
-![Before and after MCP](docs/ev-copilot-before-after-mcp.png)
+<img width="2550" height="1350" alt="ev-copilot-before-after-mcp" src="https://github.com/user-attachments/assets/497185b5-6c45-4a26-82c5-7ac76954871a" />
 
 **Before MCP**, every model needs its own bespoke integration with every API: its own client code, auth, schemas
 and error handling. Three models and five data sources means **15 integrations**, and adding a model or a source
@@ -204,7 +202,8 @@ data source added, without touching the others.
 
 ### How tool calling works
 
-![Tool calling flow](docs/ev-copilot-tool-calling-flow.png)
+<img width="2670" height="1320" alt="ev-copilot-tool-calling-flow" src="https://github.com/user-attachments/assets/09f268ed-0293-47fe-8c41-467fc043a09c" />
+
 
 The **MCP host** (our agent) contains an **MCP client** and the **LLM**. A tool call happens in five steps:
 
@@ -221,7 +220,7 @@ memory hook so the model can't call it directly.
 
 ### Many servers, one host
 
-![Multiple MCP servers](docs/ev-copilot-multiple-mcp-servers.png)
+<img width="2640" height="1350" alt="ev-copilot-multiple-mcp-servers" src="https://github.com/user-attachments/assets/3eea6ed1-16e2-4d4a-87a2-35c99cb7c0c3" />
 
 One host can talk to many MCP servers, each with a different kind of backing:
 - a **prompt server** backed by Bedrock Prompt Management;
@@ -234,7 +233,7 @@ conceptual view.
 
 ### Servers scale independently
 
-![Independent scaling](docs/ev-copilot-independent-scaling.png)
+<img width="2640" height="1350" alt="ev-copilot-independent-scaling" src="https://github.com/user-attachments/assets/647e3ccc-d890-4779-b791-5cfb35c645e0" />
 
 Because the protocol separates hosts from servers, each side scales on its own. A charging server used by
 several agents can add replicas without anyone changing the agents. The other agents in the figure are
@@ -247,7 +246,7 @@ own microVM.
 
 ### The end-to-end flow
 
-![End-to-end flow](docs/ev-copilot-end-to-end-flow.png)
+<img width="2550" height="2400" alt="ev-copilot-end-to-end-flow" src="https://github.com/user-attachments/assets/bcb5246e-0ba2-41f1-8c04-7e44ff9a18ce" />
 
 Here's what happens when a user types *"Plan a trip from Mumbai to Lonavala"*:
 
@@ -269,7 +268,7 @@ Here's what happens when a user types *"Plan a trip from Mumbai to Lonavala"*:
 
 ### Zooming into the MCP server
 
-![MCP servers layer](docs/ev-copilot-mcp-servers-layer.png)
+<img width="2737" height="1122" alt="ev-copilot-mcp-servers-layer" src="https://github.com/user-attachments/assets/6acc6b31-fc0f-4341-a3ee-bba21da68342" />
 
 The MCP server is one deployable unit: a **FastMCP global server (registry)** that mounts seven domain servers,
 each under its own namespace:
@@ -294,7 +293,7 @@ Manager**, so no key is ever baked into an image or passed through the agent.
 
 ### Tools are designed for a model, not a human
 
-![Inspector: tool](docs/ev-copilot-inspector-tool.png)
+<img width="2250" height="1150" alt="ev-copilot-inspector-tool" src="https://github.com/user-attachments/assets/a864973b-2012-465f-9c34-daa7e5d29a98" />
 
 Every tool is a typed Python function with a docstring. FastMCP turns these into the JSON schema the model sees,
 shown above as the MCP Inspector form for `charging_search_chargers_along_route`. A few rules shape every tool:
@@ -322,7 +321,7 @@ simulate every plan before presenting it.
 
 ### Prompts live in code and are versioned in Bedrock
 
-![Inspector: prompt](docs/ev-copilot-inspector-prompt.png)
+<img width="2250" height="1363" alt="ev-copilot-inspector-prompt" src="https://github.com/user-attachments/assets/1f45e126-c80e-4413-9dc2-75c873f42d35" />
 
 The four prompts (agent scope, router, simple response, reflection) are defined in Python in
 `ev-copilot-mcp/src/prompts/` and served as MCP prompts; above, the agent-scope prompt is fetched with
@@ -395,7 +394,7 @@ the agent with HTTP. Both are ARM64 containers built by CI and pushed to ECR.
 
 ### Session isolation
 
-![Session isolation](docs/ev-copilot-session-isolation.png)
+<img width="2580" height="1470" alt="ev-copilot-session-isolation" src="https://github.com/user-attachments/assets/7f5904d6-4f2b-401b-9b9d-11d8bf456719" />
 
 Every conversation gets its own **microVM**. The UI passes the chat's `conversation_id` as the
 `runtimeSessionId`, so each driver's session has isolated CPU, memory and state, and one user's data can't leak
@@ -404,7 +403,7 @@ as conversation history and preferences, lives in AgentCore Memory, not in the m
 
 ### Versions and endpoints
 
-![Runtime versioning](docs/ev-copilot-runtime-versioning.png)
+<img width="2580" height="1395" alt="ev-copilot-runtime-versioning" src="https://github.com/user-attachments/assets/a964a4f0-29d2-4132-8461-baa0c6983f3e" />
 
 Each deployment of a new image creates an **immutable runtime version**. EV Copilot uses the `DEFAULT` endpoint,
 which follows the latest version. The same mechanism supports separate endpoints, such as production pinned to a
@@ -417,7 +416,7 @@ split in the figure is illustrative; it isn't provisioned here.
 
 ### A hybrid connection layer
 
-![MCP connection layer](docs/ev-copilot-mcp-connection-layer.png)
+<img width="2100" height="2085" alt="ev-copilot-mcp-connection-layer" src="https://github.com/user-attachments/assets/f6bf8be0-3723-4b58-876b-95720e289de9" />
 
 There are two ways for an agent to reach an MCP server on AgentCore Runtime, and EV Copilot uses both:
 - **Prompts** come over a **direct MCP connection** to the server runtime, because the Gateway proxies tools only.
@@ -426,7 +425,8 @@ There are two ways for an agent to reach an MCP server on AgentCore Runtime, and
 
 ### Option 1: direct connection
 
-![Direct connection auth](docs/ev-copilot-direct-connection-auth.png)
+!<img width="2550" height="1440" alt="ev-copilot-direct-connection-auth" src="https://github.com/user-attachments/assets/9fbead0f-6b1b-421c-a576-3b2e58cd1ae7" />
+
 
 The MCP runtime has a **JWT authorizer** backed by **Amazon Cognito**. The agent gets an access token with the
 OAuth2 client-credentials flow (scope `evCopilot-api/mcp`) and sends it as a Bearer token with `prompts/list` and
@@ -435,7 +435,7 @@ cached and refreshed shortly before they expire.
 
 ### Option 2: the AgentCore Gateway
 
-![Gateway architecture](docs/ev-copilot-gateway-architecture.png)
+<img width="2820" height="1117" alt="ev-copilot-gateway-architecture" src="https://github.com/user-attachments/assets/da8cda41-3efc-497f-b1f5-78344bc08b6b" />
 
 The **AgentCore Gateway** sits between the agent and the MCP runtime. It has a **target** (`evCopilot-McpTarget`)
 pointing at the MCP server, and it keeps a **tools catalog**. The agent lists tools and invokes them by their
@@ -443,23 +443,23 @@ prefixed names (`evCopilot-McpTarget___<tool>`), and the Gateway routes each cal
 
 The catalog is a cached copy of the server's tools, so it has to be kept in sync:
 
-![Gateway catalog out of sync](docs/ev-copilot-gateway-catalog-out-of-sync.png)
+<img width="2580" height="1215" alt="ev-copilot-gateway-catalog-out-of-sync" src="https://github.com/user-attachments/assets/2f4fdd49-5f92-4ea0-8dcf-244bed4a15f0" />
 
 If a new tool is deployed to the MCP server but the catalog isn't refreshed, the agent can't see it. EV Copilot
 avoids this by **re-syncing the target in CI** after every MCP deployment (the `sync-gateway` job):
 
-![Gateway sync target](docs/ev-copilot-gateway-sync-target.png)
+<img width="2580" height="1215" alt="ev-copilot-gateway-sync-target" src="https://github.com/user-attachments/assets/0d7c6e93-31ee-4c8c-b050-1242b350f936" />
 
 The Gateway can also do **semantic tool search**, returning only the tools relevant to a natural-language query.
 That helps when there are hundreds of tools:
 
-![Gateway semantic search](docs/ev-copilot-gateway-semantic-search.png)
+<img width="2820" height="1095" alt="ev-copilot-gateway-semantic-search" src="https://github.com/user-attachments/assets/1017e79c-7646-4bce-a191-e769d70fb6c6" />
 
 With 19 tools, EV Copilot doesn't need it: the feature is **not enabled**, and the agent binds the full catalog.
 
 ### Authentication: inbound and outbound
 
-![Gateway authentication](docs/ev-copilot-gateway-authentication.png)
+<img width="2820" height="1072" alt="ev-copilot-gateway-authentication" src="https://github.com/user-attachments/assets/c9cad03f-7481-4d63-8150-9cddd41b94e2" />
 
 Authentication happens twice on the Gateway path:
 - **Inbound (agent → Gateway):** a `CUSTOM_JWT` authorizer accepts only Cognito access tokens issued to EV
@@ -473,7 +473,7 @@ and the MCP server.
 
 ### Which one to use?
 
-![Direct vs Gateway](docs/ev-copilot-direct-vs-gateway.png)
+<img width="2370" height="1557" alt="ev-copilot-direct-vs-gateway" src="https://github.com/user-attachments/assets/7d2f94d2-6ea5-4f97-b92f-d5e55c52fd77" />
 
 The direct connection is simpler, faster and gives access to everything the server offers (tools *and* prompts).
 The Gateway adds managed authentication, a tool catalog, a stable endpoint and support for non-MCP targets, but it
@@ -489,7 +489,7 @@ land in **Amazon CloudWatch**, **X-Ray** and **CloudWatch GenAI Observability**.
 
 ### Metrics and alerts
 
-![CloudWatch alerting](docs/ev-copilot-cloudwatch-alerting.png)
+<img width="2400" height="1095" alt="ev-copilot-cloudwatch-alerting" src="https://github.com/user-attachments/assets/187148af-f51f-40d4-bf3d-353f2c3c4aac" />
 
 AgentCore publishes runtime metrics such as invocations, errors, latency and throttles to CloudWatch, and these can
 drive alarms that notify a team through SNS (Slack, email). The figure shows the pattern; the alarms themselves
@@ -497,7 +497,7 @@ aren't provisioned by the CDK stacks.
 
 ### Sessions, traces and spans
 
-![Session, trace, span](docs/ev-copilot-session-trace-span.png)
+<img width="2640" height="1305" alt="ev-copilot-session-trace-span" src="https://github.com/user-attachments/assets/a230a326-41a1-4cd4-8f16-4d06dbf6b4c1" />
 
 - A **session** is a whole conversation, identified by the `conversation_id`.
 - Each user message produces a **trace**.
@@ -509,23 +509,23 @@ restored from the checkpointer.
 
 ### Tracing the MCP server
 
-![MCP tracing decorator](docs/ev-copilot-mcp-tracing-decorator.png)
+<img width="2670" height="1327" alt="ev-copilot-mcp-tracing-decorator" src="https://github.com/user-attachments/assets/ea3c1b41-49c0-4b42-b07c-1f78ef2c8cf8" />
 
 On the server side, every tool and prompt handler is wrapped by a small `@traced` decorator. It opens a span
 (`mcp.tool.<tool>` or `mcp.prompt.<prompt>`), records arguments, timing and errors, and links the span to the
 caller's trace. Here is the trace of a prompt fetch, from the MCP request down to Bedrock Prompt Management:
 
-![Trace: prompt fetch](docs/ev-copilot-trace-prompt-fetch.png)
+<img width="2250" height="1146" alt="ev-copilot-trace-prompt-fetch" src="https://github.com/user-attachments/assets/8552819c-49d3-4824-a16a-9f785c369c32" />
 
 ### End-to-end request tracing
 
-![End-to-end tracing](docs/ev-copilot-end-to-end-tracing.png)
+<img width="2820" height="1974" alt="ev-copilot-end-to-end-tracing" src="https://github.com/user-attachments/assets/d7856b73-9ff7-46ed-a357-016fb0fc65eb" />
 
 The same session id travels from the UI through the agent, the Gateway and the MCP server, carried in OpenTelemetry
 baggage. One request can therefore be followed across every hop: guardrails, each model call, each tool call, and
 the outbound HTTP call to Google:
 
-![Trace: trip planning](docs/ev-copilot-trace-trip-planning.png)
+<img width="2400" height="2280" alt="ev-copilot-trace-trip-planning" src="https://github.com/user-attachments/assets/b4acb7d9-58d6-4550-b19a-3245efa56357" />
 
 That makes it easy to answer questions like "why was this answer slow?" (find the longest span: a model call or a
 tool call) or "which prompt version produced this?" (it's recorded on the span).
@@ -881,8 +881,6 @@ These are deliberate simplifications for a development and demo scope (details i
 
 - [ARCHITECTURE.md](ARCHITECTURE.md): component details, CDK outputs, how to connect to the MCP server and the
   agent directly (curl and MCP Inspector examples), CI/CD and observability in depth.
-- [docs/README.md](docs/README.md): index of every figure in this article and how to regenerate them
-  (`docs/diagram-src/`).
 - Reference: *Build Production Ready MCP Server From Scratch on AWS Bedrock AgentCore*, the "Place Finder"
   article whose architecture this project follows and extends.
 
