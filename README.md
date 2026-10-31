@@ -18,8 +18,7 @@ This README is written as an article. The first part is a quick reference (what 
 components and project structure). The middle part walks through how and why the system is built the way it is,
 one diagram at a time. The last part covers setup, deployment and configuration.
 
-<img width="1148" height="1055" alt="image" src="https://github.com/user-attachments/assets/7b8ed13e-a102-47f1-8cf3-49ee1385cce8" />
-
+<img width="1474" height="1200" alt="image" src="https://github.com/user-attachments/assets/973a9d60-b580-4c3f-9c1e-81b74402cf6a" />
 
 ---
 
