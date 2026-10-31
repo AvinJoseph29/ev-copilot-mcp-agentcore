@@ -18,7 +18,8 @@ This README is written as an article. The first part is a quick reference (what 
 components and project structure). The middle part walks through how and why the system is built the way it is,
 one diagram at a time. The last part covers setup, deployment and configuration.
 
-<img width="2550" height="2340" alt="ev-copilot-architecture" src="https://github.com/user-attachments/assets/433dc86f-ba95-47e9-91bd-4db5f0f4d67b" />
+<img width="1148" height="1055" alt="image" src="https://github.com/user-attachments/assets/7b8ed13e-a102-47f1-8cf3-49ee1385cce8" />
+
 
 ---
 
